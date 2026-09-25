@@ -138,7 +138,7 @@ def query_ollama(
         raise ValueError(f"Ollama returned an HTTP error: {exc.code}") from exc
     except urllib.error.URLError as exc:
         raise ValueError(f"Ollama server not available at {ollama_url}: {exc}") from exc
-    except (TimeoutError, json.JSONDecodeError) as exc:
+    except (TimeoutError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ValueError(f"Ollama communication error: {exc}") from exc
 
 

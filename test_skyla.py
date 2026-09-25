@@ -215,6 +215,22 @@ class SkylaCoreTests(unittest.TestCase):
 
             self.assertIn("Error: Ollama communication error:", response)
 
+    def test_ollama_invalid_utf8_stream_response(self):
+        """Test that invalid UTF-8 streaming data is reported as a communication error."""
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.__iter__.return_value = iter([
+                b'{"response": "valid"}\n',
+                b'\xff\xfe\xfd\n',
+            ])
+            mock_response.__enter__.return_value = mock_response
+            mock_urlopen.return_value = mock_response
+
+            response = skyla.respond("test prompt", config)
+
+            self.assertIn("Error: Ollama communication error:", response)
+
     def test_ollama_empty_stream_response(self):
         """Test that an empty Ollama stream is handled safely."""
         config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
