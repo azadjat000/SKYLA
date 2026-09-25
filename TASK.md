@@ -52,3 +52,15 @@ Scope:
 - Add focused automated tests.
 - Keep the terminal architecture simple.
 - Do not introduce voice, memory, GUI, automation, or plugins.
+
+## TASK-007 — Normalized built-in command handling
+
+Status: completed.
+
+Scope:
+- Verify built-in commands ignore surrounding spaces and letter case.
+- Keep `hello skyla` and `exit` as local built-in commands.
+- Ensure longer prompts containing built-in command text are still sent to Ollama.
+- Add focused automated tests.
+- Preserve the existing command implementation because it already satisfies the required behavior.
+- Do not introduce voice, memory, GUI, automation, or plugins.

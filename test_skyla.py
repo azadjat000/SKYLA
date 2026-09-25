@@ -150,6 +150,25 @@ class SkylaCoreTests(unittest.TestCase):
         self.assertEqual(skyla.respond("hello skyla"), "Hello! I am SKYLA.")
         self.assertEqual(skyla.respond("exit"), "Goodbye!")
 
+    def test_built_in_commands_are_normalized(self):
+        """Test that built-in commands ignore case and surrounding spaces."""
+        self.assertEqual(skyla.respond("  HELLO SKYLA  "), "Hello! I am SKYLA.")
+        self.assertEqual(skyla.respond("  Exit  "), "Goodbye!")
+
+    def test_similar_text_is_not_treated_as_built_in_command(self):
+        """Test that longer prompts are still sent to Ollama."""
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("skyla.query_ollama", return_value="AI response") as mock_query:
+            response = skyla.respond("hello skyla, tell me about Linux", config)
+
+        self.assertEqual(response, "AI response")
+        mock_query.assert_called_once_with(
+            "hello skyla, tell me about Linux",
+            "test-model",
+            "http://localhost:11434",
+            on_chunk=None,
+        )
+
     def test_version_constant(self):
         """Test that VERSION is correctly set."""
         self.assertEqual(skyla.VERSION, "0.3.0")
