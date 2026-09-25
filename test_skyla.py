@@ -43,6 +43,20 @@ class SkylaCoreTests(unittest.TestCase):
         self.assertIn("SKYLA configuration error", message)
         self.assertIn("bad configuration", message)
 
+    def test_main_uses_custom_config(self):
+        """Test that --config loads and uses the supplied configuration."""
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = self.config(directory, model="custom-model")
+
+            with patch("skyla.run") as mock_run:
+                result = skyla.main(["--config", str(config_path)])
+
+        self.assertEqual(result, 0)
+        mock_run.assert_called_once()
+        loaded_config = mock_run.call_args.args[0]
+        self.assertEqual(loaded_config["model"], "custom-model")
+        self.assertEqual(loaded_config["ollama_url"], "http://localhost:11434")
+
     def test_startup_and_commands(self):
         """Test that SKYLA starts and processes basic commands."""
         with tempfile.TemporaryDirectory() as directory:
