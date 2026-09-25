@@ -67,6 +67,27 @@ class SkylaCoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             skyla.load_config("/path/that/does/not/exist.json")
 
+    def test_malformed_configuration(self):
+        """Test that malformed JSON configuration raises an error."""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text('{"model": "test-model"', encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                skyla.load_config(path)
+
+    def test_partial_configuration_keeps_defaults(self):
+        """Test that missing settings keep the built-in defaults."""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text('{"model": "custom-model"}', encoding="utf-8")
+
+            config = skyla.load_config(path)
+
+            self.assertEqual(config["model"], "custom-model")
+            self.assertEqual(config["ollama_url"], skyla.DEFAULT_CONFIG["ollama_url"])
+            self.assertEqual(config["log_file"], skyla.DEFAULT_CONFIG["log_file"])
+
     def test_invalid_configuration_empty_model(self):
         """Test that an empty model name is rejected."""
         config = {
