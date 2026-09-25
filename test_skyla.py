@@ -10,6 +10,47 @@ import skyla
 
 
 class SkylaCoreTests(unittest.TestCase):
+    def test_uninstall_script_removes_installation_and_state(self):
+        """Test that uninstall.sh removes isolated SKYLA files and directories."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            install_dir = root / "home"
+            config_dir = root / "config"
+            state_dir = root / "state"
+            bin_dir = root / "bin"
+
+            install_dir.mkdir()
+            config_dir.mkdir()
+            state_dir.mkdir()
+            bin_dir.mkdir()
+
+            (install_dir / "skyla.py").touch()
+            (config_dir / "config.json").touch()
+            (state_dir / "skyla.log").touch()
+            (bin_dir / "skyla").touch()
+
+            env = {
+                "SKYLA_HOME": str(install_dir),
+                "SKYLA_CONFIG_DIR": str(config_dir),
+                "SKYLA_STATE_DIR": str(state_dir),
+                "SKYLA_BIN_DIR": str(bin_dir),
+            }
+
+            result = subprocess.run(
+                ["bash", "uninstall.sh", "--yes"],
+                cwd=Path(__file__).parent,
+                env={**os.environ, **env},
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("SKYLA was uninstalled.", result.stdout)
+            self.assertFalse(install_dir.exists())
+            self.assertFalse(config_dir.exists())
+            self.assertFalse(state_dir.exists())
+            self.assertFalse((bin_dir / "skyla").exists())
+
     def test_run_script_uses_installed_launcher(self):
         """Test that run.sh uses the installed launcher and forwards arguments."""
         with tempfile.TemporaryDirectory() as directory:
