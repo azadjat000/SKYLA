@@ -51,6 +51,48 @@ class SkylaCoreTests(unittest.TestCase):
             self.assertFalse(state_dir.exists())
             self.assertFalse((bin_dir / "skyla").exists())
 
+    def test_uninstall_script_cancellation_preserves_files(self):
+        """Test that cancelling uninstall leaves isolated SKYLA files untouched."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            install_dir = root / "home"
+            config_dir = root / "config"
+            state_dir = root / "state"
+            bin_dir = root / "bin"
+
+            install_dir.mkdir()
+            config_dir.mkdir()
+            state_dir.mkdir()
+            bin_dir.mkdir()
+
+            (install_dir / "skyla.py").touch()
+            (config_dir / "config.json").touch()
+            (state_dir / "skyla.log").touch()
+            (bin_dir / "skyla").touch()
+
+            env = {
+                "SKYLA_HOME": str(install_dir),
+                "SKYLA_CONFIG_DIR": str(config_dir),
+                "SKYLA_STATE_DIR": str(state_dir),
+                "SKYLA_BIN_DIR": str(bin_dir),
+            }
+
+            result = subprocess.run(
+                ["bash", "uninstall.sh"],
+                cwd=Path(__file__).parent,
+                env={**os.environ, **env},
+                input="N\n",
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("Uninstall cancelled.", result.stdout)
+            self.assertTrue((install_dir / "skyla.py").exists())
+            self.assertTrue((config_dir / "config.json").exists())
+            self.assertTrue((state_dir / "skyla.log").exists())
+            self.assertTrue((bin_dir / "skyla").exists())
+
     def test_run_script_uses_installed_launcher(self):
         """Test that run.sh uses the installed launcher and forwards arguments."""
         with tempfile.TemporaryDirectory() as directory:
