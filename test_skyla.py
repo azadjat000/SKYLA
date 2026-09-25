@@ -88,6 +88,25 @@ class SkylaCoreTests(unittest.TestCase):
             self.assertEqual(config["ollama_url"], skyla.DEFAULT_CONFIG["ollama_url"])
             self.assertEqual(config["log_file"], skyla.DEFAULT_CONFIG["log_file"])
 
+    def test_loaded_configuration_does_not_mutate_defaults(self):
+        """Test that changing loaded config does not change built-in defaults."""
+        config = skyla.load_config()
+        config["model"] = "temporary-model"
+
+        self.assertEqual(skyla.DEFAULT_CONFIG["model"], "qwen3:1.7b")
+
+    def test_configuration_loads_are_isolated(self):
+        """Test that separate configuration loads do not leak values."""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text('{"model": "custom-model"}', encoding="utf-8")
+
+            first = skyla.load_config(path)
+            second = skyla.load_config()
+
+            self.assertEqual(first["model"], "custom-model")
+            self.assertEqual(second["model"], skyla.DEFAULT_CONFIG["model"])
+
     def test_invalid_configuration_empty_model(self):
         """Test that an empty model name is rejected."""
         config = {
