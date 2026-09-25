@@ -23,6 +23,12 @@ DEFAULT_CONFIG = {
     "log_file": "~/.local/state/skyla/skyla.log",
 }
 
+BUILTIN_COMMANDS = (
+    "hello skyla",
+    "exit",
+    "--status",
+)
+
 
 def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     """Load JSON configuration, falling back to safe built-in defaults."""

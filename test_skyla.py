@@ -155,6 +155,13 @@ class SkylaCoreTests(unittest.TestCase):
         self.assertEqual(skyla.respond("  HELLO SKYLA  "), "Hello! I am SKYLA.")
         self.assertEqual(skyla.respond("  Exit  "), "Goodbye!")
 
+    def test_builtin_command_names_are_defined(self):
+        """Test that SKYLA exposes its supported built-in command names."""
+        self.assertEqual(
+            set(skyla.BUILTIN_COMMANDS),
+            {"hello skyla", "exit", "--status"},
+        )
+
     def test_similar_text_is_not_treated_as_built_in_command(self):
         """Test that longer prompts are still sent to Ollama."""
         config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
