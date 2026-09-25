@@ -45,6 +45,8 @@ def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
 def configure_logging(config: dict[str, Any]) -> logging.Logger:
     """Configure a small file logger without making logging a runtime dependency."""
     logger = logging.getLogger("skyla")
+    for existing_handler in logger.handlers:
+        existing_handler.close()
     logger.handlers.clear()
     logger.setLevel(logging.INFO)
     log_path = Path(str(config.get("log_file", DEFAULT_CONFIG["log_file"]))).expanduser()
@@ -167,12 +169,20 @@ def run(config: dict[str, Any] | None = None) -> None:
     while True:
         try:
             command = input("> ")
-            if command.strip().lower() == "--status":
+            normalized = command.strip().lower()
+
+            # Ignore empty input without contacting Ollama.
+            if not normalized:
+                continue
+
+            if normalized == "--status":
                 print(status(config))
                 continue
+
             response = respond(command, config, logger)
             print(response)
-            if command.strip().lower() == "exit":
+
+            if normalized == "exit":
                 break
         except (EOFError, KeyboardInterrupt):
             print("\nGoodbye!")

@@ -94,6 +94,39 @@ class SkylaCoreTests(unittest.TestCase):
         """Test that VERSION is correctly set."""
         self.assertEqual(skyla.VERSION, "0.3.0")
 
+    def test_blank_input_is_ignored(self):
+        """Test that blank input does not contact Ollama."""
+        config = {
+            "model": "test-model",
+            "ollama_url": "http://localhost:11434",
+        }
+        with patch("skyla.respond") as mock_respond, \
+             patch("builtins.input", side_effect=["   ", "exit"]), \
+             patch("sys.stdout"):
+            skyla.run(config)
+
+        mock_respond.assert_called_once_with("exit", config, unittest.mock.ANY)
+
+    def test_session_continues_after_ollama_error(self):
+        """Test that an Ollama error does not terminate the session."""
+        config = {
+            "model": "test-model",
+            "ollama_url": "http://localhost:11434",
+        }
+
+        with patch(
+            "skyla.respond",
+            side_effect=[
+                "Error: Ollama server not available",
+                "Goodbye!",
+            ],
+        ) as mock_respond, \
+             patch("builtins.input", side_effect=["first question", "exit"]), \
+             patch("sys.stdout"):
+            skyla.run(config)
+
+        self.assertEqual(mock_respond.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
