@@ -37,3 +37,18 @@ Scope:
 - Add focused automated tests.
 - Keep the terminal architecture simple.
 - Do not introduce voice, memory, GUI, automation, or plugins.
+
+## TASK-006 — Configuration validation and startup safety
+
+Status: completed.
+
+Scope:
+- Validate required configuration values before startup.
+- Reject empty model names.
+- Validate the Ollama endpoint as an HTTP or HTTPS URL.
+- Validate the log-file configuration value.
+- Fail clearly before entering the interactive session when configuration is invalid.
+- Preserve existing valid configuration behavior.
+- Add focused automated tests.
+- Keep the terminal architecture simple.
+- Do not introduce voice, memory, GUI, automation, or plugins.

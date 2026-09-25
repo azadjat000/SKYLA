@@ -11,6 +11,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+import urllib.parse
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +41,30 @@ def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         raise ValueError(f"unable to load configuration {config_path}: {exc}") from exc
     return config
+
+
+def validate_config(config: dict[str, Any]) -> None:
+    """Validate the configuration required by SKYLA."""
+    if not isinstance(config, dict):
+        raise ValueError("configuration must be a JSON object")
+
+    model = config.get("model")
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError("configuration field 'model' must be a non-empty string")
+
+    ollama_url = config.get("ollama_url")
+    if not isinstance(ollama_url, str) or not ollama_url.strip():
+        raise ValueError("configuration field 'ollama_url' must be a non-empty string")
+
+    parsed_url = urllib.parse.urlparse(ollama_url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError(
+            "configuration field 'ollama_url' must be a valid HTTP or HTTPS URL"
+        )
+
+    log_file = config.get("log_file")
+    if not isinstance(log_file, str) or not log_file.strip():
+        raise ValueError("configuration field 'log_file' must be a non-empty string")
 
 
 def configure_logging(config: dict[str, Any]) -> logging.Logger:
@@ -227,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         config = load_config(args.config)
+        validate_config(config)
         if args.status:
             print(status(config))
         else:

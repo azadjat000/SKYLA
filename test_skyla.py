@@ -53,6 +53,35 @@ class SkylaCoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             skyla.load_config("/path/that/does/not/exist.json")
 
+    def test_invalid_configuration_empty_model(self):
+        """Test that an empty model name is rejected."""
+        config = {
+            "model": "",
+            "ollama_url": "http://localhost:11434",
+            "log_file": "/tmp/skyla-test.log",
+        }
+        with self.assertRaises(ValueError):
+            skyla.validate_config(config)
+
+    def test_invalid_configuration_url(self):
+        """Test that an invalid Ollama URL is rejected."""
+        config = {
+            "model": "test-model",
+            "ollama_url": "not-a-url",
+            "log_file": "/tmp/skyla-test.log",
+        }
+        with self.assertRaises(ValueError):
+            skyla.validate_config(config)
+
+    def test_valid_configuration(self):
+        """Test that a valid configuration passes validation."""
+        config = {
+            "model": "test-model",
+            "ollama_url": "http://localhost:11434",
+            "log_file": "/tmp/skyla-test.log",
+        }
+        self.assertIsNone(skyla.validate_config(config))
+
     def test_ollama_successful_response(self):
         """Test that Ollama response is correctly parsed."""
         config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
