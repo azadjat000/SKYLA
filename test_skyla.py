@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +10,31 @@ import skyla
 
 
 class SkylaCoreTests(unittest.TestCase):
+    def test_run_script_reports_missing_installation(self):
+        """Test that run.sh reports a missing isolated installation."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env = {
+                "SKYLA_HOME": str(root / "home"),
+                "SKYLA_CONFIG_DIR": str(root / "config"),
+                "SKYLA_STATE_DIR": str(root / "state"),
+                "SKYLA_BIN_DIR": str(root / "bin"),
+            }
+
+            result = subprocess.run(
+                ["bash", "run.sh"],
+                cwd=Path(__file__).parent,
+                env={**os.environ, **env},
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(
+                "SKYLA is not installed. Run ./install.sh first.",
+                result.stderr,
+            )
+
     def config(self, directory, model="test-model"):
         path = Path(directory) / "config.json"
         path.write_text(
