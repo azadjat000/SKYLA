@@ -21,6 +21,28 @@ class SkylaCoreTests(unittest.TestCase):
         )
         return path
 
+    def test_main_status_returns_success(self):
+        """Test that --status exits successfully with diagnostics."""
+        with patch("skyla.status", return_value="SKYLA status: healthy") as mock_status:
+            with patch("sys.stdout") as mock_stdout:
+                result = skyla.main(["--status"])
+
+        self.assertEqual(result, 0)
+        mock_status.assert_called_once()
+        mock_stdout.write.assert_called()
+
+    def test_main_configuration_error_returns_two(self):
+        """Test that invalid configuration returns CLI error code 2."""
+        with patch("skyla.load_config", side_effect=ValueError("bad configuration")):
+            with patch("builtins.print") as mock_print:
+                result = skyla.main([])
+
+        self.assertEqual(result, 2)
+        mock_print.assert_called_once()
+        message = mock_print.call_args.args[0]
+        self.assertIn("SKYLA configuration error", message)
+        self.assertIn("bad configuration", message)
+
     def test_startup_and_commands(self):
         """Test that SKYLA starts and processes basic commands."""
         with tempfile.TemporaryDirectory() as directory:
