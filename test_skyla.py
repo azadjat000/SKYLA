@@ -449,6 +449,13 @@ class SkylaCoreTests(unittest.TestCase):
         """Test that VERSION is correctly set."""
         self.assertEqual(skyla.VERSION, "0.3.0")
 
+    def test_default_config_has_memory_file(self):
+        """Test that the default configuration defines a memory file."""
+        self.assertEqual(
+            skyla.DEFAULT_CONFIG["memory_file"],
+            "~/.local/state/skyla/memory.json",
+        )
+
     def test_blank_input_is_ignored(self):
         """Test that blank input does not contact Ollama."""
         config = {

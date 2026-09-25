@@ -22,6 +22,7 @@ DEFAULT_CONFIG = {
     "model": "qwen3:1.7b",
     "ollama_url": "http://localhost:11434",
     "log_file": "~/.local/state/skyla/skyla.log",
+    "memory_file": "~/.local/state/skyla/memory.json",
 }
 
 BUILTIN_COMMANDS = (

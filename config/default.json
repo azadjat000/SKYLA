@@ -2,5 +2,6 @@
   "version": "0.3.0",
   "model": "__MODEL__",
   "ollama_url": "http://localhost:11434",
-  "log_file": "__STATE_DIR__/skyla.log"
+  "log_file": "__STATE_DIR__/skyla.log",
+  "memory_file": "__STATE_DIR__/memory.json"
 }
