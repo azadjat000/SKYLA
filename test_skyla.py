@@ -67,6 +67,34 @@ class SkylaCoreTests(unittest.TestCase):
             response = skyla.respond("test prompt", config)
             self.assertEqual(response, "This is a test response")
 
+    def test_ollama_malformed_stream_response(self):
+        """Test that malformed streaming data is reported as a communication error."""
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.__iter__.return_value = iter([
+                b'not-valid-json\\n',
+            ])
+            mock_response.__enter__.return_value = mock_response
+            mock_urlopen.return_value = mock_response
+
+            response = skyla.respond("test prompt", config)
+
+            self.assertIn("Error: Ollama communication error:", response)
+
+    def test_ollama_empty_stream_response(self):
+        """Test that an empty Ollama stream is handled safely."""
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.__iter__.return_value = iter([])
+            mock_response.__enter__.return_value = mock_response
+            mock_urlopen.return_value = mock_response
+
+            response = skyla.respond("test prompt", config)
+
+            self.assertEqual(response, "")
+
     def test_ollama_unavailable(self):
         """Test error handling when Ollama server is unavailable."""
         import urllib.error
