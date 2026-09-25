@@ -47,6 +47,8 @@ class SkylaCoreTests(unittest.TestCase):
             result = skyla.status({"version": "test", "model": "test-model", "ollama_url": "http://localhost:11434"})
         self.assertIn("healthy", result)
         self.assertIn("not installed", result)
+        self.assertIn("Python:", result)
+        self.assertIn("Platform:", result)
 
     def test_configuration_error(self):
         """Test that loading a non-existent config file raises an error."""

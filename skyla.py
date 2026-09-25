@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -205,6 +206,8 @@ def status(config: dict[str, Any]) -> str:
             f"Version: {config.get('version', VERSION)}",
             f"Configured model: {model}",
             f"Ollama endpoint: {ollama_url}",
+            f"Python: {platform.python_version()}",
+            f"Platform: {platform.system()} {platform.release()}",
             ollama_status(model, ollama_url),
         ]
     )
