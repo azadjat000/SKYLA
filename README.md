@@ -1,6 +1,6 @@
 # SKYLA
 
-SKYLA is a minimal local-first terminal assistant foundation for Linux. The current release provides a terminal interface, configuration, logging, diagnostics, and safe installation scripts. Ollama is detected but is not required for the core terminal commands.
+SKYLA is a minimal local-first terminal assistant for Linux. The current release integrates with Ollama to send user queries to a local language model (qwen3:1.7b by default) and display responses in the terminal.
 
 ## Fresh installation
 
@@ -17,13 +17,19 @@ chmod +x install.sh run.sh uninstall.sh
 ./run.sh
 ```
 
-Type `hello skyla` or `exit`.
+Type a message to send it to the configured model, or use:
+
+- `hello skyla` — test built-in response
+- `--status` — show diagnostics
+- `exit` — quit
 
 ## Status
 
 ```bash
 ./run.sh --status
 ```
+
+Shows Ollama availability and the configured model status without requiring an API call.
 
 ## Update
 
@@ -42,17 +48,38 @@ The uninstall script removes the installed runtime, launcher, configuration, and
 
 ## Configuration and AI model
 
-The installer creates `$HOME/.config/skyla/config.json` and preserves it on repeat installs. Set `SKYLA_MODEL` before a fresh install to choose the model name, or update the generated JSON configuration normally. If Ollama is installed, SKYLA reports whether the configured model exists. SKYLA never downloads a model automatically; download one explicitly with `ollama pull <model>`.
+The installer creates `$HOME/.config/skyla/config.json` and preserves it on repeat installs. Default model is `qwen3:1.7b`. To use a different model:
+
+1. Edit `$HOME/.config/skyla/config.json` and change the `model` field
+2. Make sure Ollama has the model installed: `ollama list` and `ollama pull <model>` if needed
+3. Restart SKYLA
+
+Ollama endpoint defaults to `http://localhost:11434` and can be customized in the configuration.
+
+SKYLA will show clear errors if Ollama is not running or the model is missing.
 
 ## Dependencies
 
 - Linux
 - Python 3.10 or newer with `venv` support
 - No third-party Python packages are currently required
-- Ollama is optional and only needed for future local-model integration
+- Ollama (optional, but needed for model responses)
 
 ## Tests
 
 ```bash
 python3 -m unittest discover -v
+```
+
+Tests use mocks and do not require Ollama to be running.
+
+## Real Ollama integration test
+
+With Ollama running and qwen3:1.7b installed:
+
+```bash
+./run.sh
+> what is 2+2?
+Answer: 4 (or similar from the model)
+> exit
 ```

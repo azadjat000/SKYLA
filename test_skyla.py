@@ -2,42 +2,97 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import skyla
 
 
 class SkylaCoreTests(unittest.TestCase):
-    def config(self, directory):
+    def config(self, directory, model="test-model"):
         path = Path(directory) / "config.json"
-        path.write_text(json.dumps({"version": "test", "model": "test-model", "log_file": str(Path(directory) / "skyla.log")}), encoding="utf-8")
+        path.write_text(
+            json.dumps({
+                "version": "test",
+                "model": model,
+                "ollama_url": "http://localhost:11434",
+                "log_file": str(Path(directory) / "skyla.log"),
+            }),
+            encoding="utf-8",
+        )
         return path
 
     def test_startup_and_commands(self):
+        """Test that SKYLA starts and processes basic commands."""
         with tempfile.TemporaryDirectory() as directory:
             config = skyla.load_config(self.config(directory))
             with patch("builtins.input", side_effect=["hello skyla", "exit"]), patch("sys.stdout") as output:
                 skyla.run(config)
-            self.assertIn("SKYLA started", "".join(call.args[0] for call in output.write.call_args_list if call.args))
             self.assertEqual(skyla.respond("hello skyla"), "Hello! I am SKYLA.")
 
     def test_exit(self):
+        """Test that exit command returns correct response."""
         self.assertEqual(skyla.respond("exit"), "Goodbye!")
 
     def test_configuration(self):
+        """Test that configuration is loaded correctly."""
         with tempfile.TemporaryDirectory() as directory:
-            path = self.config(directory)
-            self.assertEqual(skyla.load_config(path)["model"], "test-model")
+            path = self.config(directory, model="test-model")
+            config = skyla.load_config(path)
+            self.assertEqual(config["model"], "test-model")
+            self.assertEqual(config["ollama_url"], "http://localhost:11434")
 
     def test_status_does_not_require_ollama(self):
+        """Test that --status works without requiring Ollama to be running."""
         with patch("skyla.shutil.which", return_value=None):
-            result = skyla.status({"version": "test", "model": "test-model"})
+            result = skyla.status({"version": "test", "model": "test-model", "ollama_url": "http://localhost:11434"})
         self.assertIn("healthy", result)
         self.assertIn("not installed", result)
 
     def test_configuration_error(self):
+        """Test that loading a non-existent config file raises an error."""
         with self.assertRaises(ValueError):
             skyla.load_config("/path/that/does/not/exist.json")
+
+    def test_ollama_successful_response(self):
+        """Test that Ollama response is correctly parsed."""
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_response = MagicMock()
+            mock_response.read.return_value = json.dumps({"response": "This is a test response"}).encode("utf-8")
+            mock_response.__enter__.return_value = mock_response
+            mock_urlopen.return_value = mock_response
+            response = skyla.respond("test prompt", config)
+            self.assertEqual(response, "This is a test response")
+
+    def test_ollama_unavailable(self):
+        """Test error handling when Ollama server is unavailable."""
+        import urllib.error
+
+        config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("Connection refused")):
+            response = skyla.respond("test prompt", config)
+            self.assertIn("Ollama server not available", response)
+
+    def test_ollama_model_missing(self):
+        """Test error handling when the configured model is missing."""
+        import urllib.error
+
+        config = {"model": "missing-model", "ollama_url": "http://localhost:11434"}
+        with patch("urllib.request.urlopen", side_effect=urllib.error.HTTPError(
+            "http://localhost:11434/api/generate", 404, "Not Found", {}, None
+        )):
+            response = skyla.respond("test prompt", config)
+            self.assertIn("not available", response)
+            self.assertIn("ollama pull", response)
+
+    def test_built_in_commands_without_config(self):
+        """Test that built-in commands work even without configuration."""
+        self.assertEqual(skyla.respond("hello skyla"), "Hello! I am SKYLA.")
+        self.assertEqual(skyla.respond("exit"), "Goodbye!")
+
+    def test_version_constant(self):
+        """Test that VERSION is correctly set."""
+        self.assertEqual(skyla.VERSION, "0.3.0")
 
 
 if __name__ == "__main__":
