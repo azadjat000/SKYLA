@@ -61,7 +61,12 @@ def configure_logging(config: dict[str, Any]) -> logging.Logger:
     return logger
 
 
-def query_ollama(prompt: str, model: str, ollama_url: str) -> str:
+def query_ollama(
+    prompt: str,
+    model: str,
+    ollama_url: str,
+    on_chunk=None,
+) -> str:
     """Send a prompt to the Ollama API and return the response.
 
     Args:
@@ -76,12 +81,23 @@ def query_ollama(prompt: str, model: str, ollama_url: str) -> str:
         ValueError: If Ollama is unavailable or the model is missing
     """
     endpoint = f"{ollama_url}/api/generate"
-    request_body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode("utf-8")
+    request_body = json.dumps({"model": model, "prompt": prompt, "stream": True}).encode("utf-8")
     try:
         req = urllib.request.Request(endpoint, data=request_body, headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(req, timeout=30) as response:
-            result = json.loads(response.read().decode("utf-8"))
-            return result.get("response", "")
+        chunks = []
+        with urllib.request.urlopen(req) as response:
+            for line in response:
+                if not line.strip():
+                    continue
+                result = json.loads(line.decode("utf-8"))
+                chunk = result.get("response", "")
+                if chunk:
+                    chunks.append(chunk)
+                    if on_chunk:
+                        on_chunk(chunk)
+                if result.get("done"):
+                    break
+        return "".join(chunks)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             raise ValueError(
@@ -94,7 +110,12 @@ def query_ollama(prompt: str, model: str, ollama_url: str) -> str:
         raise ValueError(f"Ollama communication error: {exc}") from exc
 
 
-def respond(command: str, config: dict[str, Any] | None = None, logger: logging.Logger | None = None) -> str:
+def respond(
+    command: str,
+    config: dict[str, Any] | None = None,
+    logger: logging.Logger | None = None,
+    on_chunk=None,
+) -> str:
     """Return SKYLA's response for a terminal command or AI query.
 
     Built-in commands (hello skyla, exit) are handled locally.
@@ -118,7 +139,7 @@ def respond(command: str, config: dict[str, Any] | None = None, logger: logging.
     try:
         model = str(config.get("model", DEFAULT_CONFIG["model"]))
         ollama_url = str(config.get("ollama_url", DEFAULT_CONFIG["ollama_url"]))
-        response = query_ollama(command.strip(), model, ollama_url)
+        response = query_ollama(command.strip(), model, ollama_url, on_chunk=on_chunk)
         if logger:
             logger.info(f"Model response received for prompt: {command.strip()[:50]}")
         return response.strip()
@@ -179,8 +200,14 @@ def run(config: dict[str, Any] | None = None) -> None:
                 print(status(config))
                 continue
 
-            response = respond(command, config, logger)
-            print(response)
+            print("Processing...", flush=True)
+            response = respond(
+                command,
+                config,
+                logger,
+                on_chunk=lambda chunk: print(chunk, end="", flush=True),
+            )
+            print()
 
             if normalized == "exit":
                 break

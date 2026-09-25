@@ -58,7 +58,10 @@ class SkylaCoreTests(unittest.TestCase):
         config = {"model": "test-model", "ollama_url": "http://localhost:11434"}
         with patch("urllib.request.urlopen") as mock_urlopen:
             mock_response = MagicMock()
-            mock_response.read.return_value = json.dumps({"response": "This is a test response"}).encode("utf-8")
+            mock_response.__iter__.return_value = iter([
+                (json.dumps({"response": "This is "}) + "\n").encode("utf-8"),
+                (json.dumps({"response": "a test response", "done": True}) + "\n").encode("utf-8"),
+            ])
             mock_response.__enter__.return_value = mock_response
             mock_urlopen.return_value = mock_response
             response = skyla.respond("test prompt", config)
@@ -105,7 +108,12 @@ class SkylaCoreTests(unittest.TestCase):
              patch("sys.stdout"):
             skyla.run(config)
 
-        mock_respond.assert_called_once_with("exit", config, unittest.mock.ANY)
+        mock_respond.assert_called_once_with(
+            "exit",
+            config,
+            unittest.mock.ANY,
+            on_chunk=unittest.mock.ANY,
+        )
 
     def test_session_continues_after_ollama_error(self):
         """Test that an Ollama error does not terminate the session."""
