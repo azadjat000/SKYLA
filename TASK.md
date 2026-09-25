@@ -64,3 +64,78 @@ Scope:
 - Add focused automated tests.
 - Preserve the existing command implementation because it already satisfies the required behavior.
 - Do not introduce voice, memory, GUI, automation, or plugins.
+
+## TASK-008 — Logging reliability
+
+Status: completed.
+
+Scope:
+- Verify logging creates the required directory and log file.
+- Preserve safe fallback behavior when the log file cannot be opened.
+- Add focused automated tests.
+
+## TASK-009 — Configuration file handling tests
+
+Status: completed.
+
+Scope:
+- Test configuration loading from JSON files.
+- Test malformed and missing configuration handling.
+- Preserve default configuration behavior.
+- Add focused automated tests.
+
+## TASK-010 — Configuration isolation
+
+Status: completed.
+
+Scope:
+- Ensure separate configuration loads do not mutate shared defaults or each other.
+- Add regression tests for configuration isolation.
+
+## TASK-011 — CLI entry-point tests
+
+Status: completed.
+
+Scope:
+- Test the `main()` command-line entry point.
+- Verify status mode and configuration error exit behavior.
+- Add focused automated tests.
+
+## TASK-012 — Custom configuration CLI support
+
+Status: completed.
+
+Scope:
+- Verify `--config` loads the requested configuration file.
+- Preserve normal CLI behavior with custom configuration.
+- Add regression coverage.
+
+## TASK-013 — Invalid custom configuration handling
+
+Status: completed.
+
+Scope:
+- Verify the CLI rejects invalid custom configuration.
+- Return a clear configuration error and non-zero exit status.
+- Add regression coverage.
+
+## TASK-014 — Invalid UTF-8 stream handling
+
+Status: completed.
+
+Scope:
+- Safely handle invalid UTF-8 data from the Ollama streaming response.
+- Preserve session stability.
+- Add focused automated coverage.
+
+## TASK-015 — Linux shell lifecycle reliability
+
+Status: completed.
+
+Scope:
+- Verify `run.sh` reports missing installations clearly.
+- Verify the installed launcher is selected and arguments are forwarded.
+- Verify `uninstall.sh` removes isolated installation, configuration, state, and launcher files.
+- Verify uninstall cancellation preserves existing files.
+- Keep repository files untouched by uninstall.
+- Add focused automated tests.
