@@ -10,6 +10,45 @@ import skyla
 
 
 class SkylaCoreTests(unittest.TestCase):
+    def test_run_script_uses_installed_launcher(self):
+        """Test that run.sh uses the installed launcher and forwards arguments."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            install_dir = root / "home"
+            bin_dir = root / "bin"
+            install_dir.mkdir()
+            bin_dir.mkdir()
+
+            (install_dir / "skyla.py").touch()
+
+            launcher = bin_dir / "skyla"
+            launcher.write_text(
+                "#!/usr/bin/env bash\n"
+                "printf 'LAUNCHER_OK\\n'\n"
+                "printf 'ARGS=%s\\n' \"$*\"\n",
+                encoding="utf-8",
+            )
+            launcher.chmod(0o755)
+
+            env = {
+                "SKYLA_HOME": str(install_dir),
+                "SKYLA_CONFIG_DIR": str(root / "config"),
+                "SKYLA_STATE_DIR": str(root / "state"),
+                "SKYLA_BIN_DIR": str(bin_dir),
+            }
+
+            result = subprocess.run(
+                ["bash", "run.sh", "--status"],
+                cwd=Path(__file__).parent,
+                env={**os.environ, **env},
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("LAUNCHER_OK", result.stdout)
+            self.assertIn("ARGS=--status", result.stdout)
+
     def test_run_script_reports_missing_installation(self):
         """Test that run.sh reports a missing isolated installation."""
         with tempfile.TemporaryDirectory() as directory:
