@@ -1,0 +1,2 @@
+# SKYLA currently uses Python's standard library only.
+# Keep this file so installation remains repeatable as dependencies are added.
