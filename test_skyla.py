@@ -41,6 +41,18 @@ class SkylaCoreTests(unittest.TestCase):
             self.assertEqual(config["model"], "test-model")
             self.assertEqual(config["ollama_url"], "http://localhost:11434")
 
+    def test_configure_logging_creates_log_directory(self):
+        """Test that logging creates a missing log directory and file."""
+        with tempfile.TemporaryDirectory() as directory:
+            log_file = Path(directory) / "nested" / "skyla.log"
+            logger = skyla.configure_logging({"log_file": str(log_file)})
+            logger.info("test log entry")
+            for handler in logger.handlers:
+                handler.flush()
+
+            self.assertTrue(log_file.exists())
+            self.assertIn("test log entry", log_file.read_text(encoding="utf-8"))
+
     def test_status_does_not_require_ollama(self):
         """Test that --status works without requiring Ollama to be running."""
         with patch("skyla.shutil.which", return_value=None):
