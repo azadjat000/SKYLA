@@ -1,0 +1,16 @@
+# Keep local/runtime material out of Git
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+*.db
+*.sqlite3
+logs/
+backups/
+cache/
+audio/
+recordings/
+node_modules/
+.DS_Store
