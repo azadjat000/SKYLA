@@ -80,12 +80,14 @@ def query_ollama(prompt: str, model: str, ollama_url: str) -> str:
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode("utf-8"))
             return result.get("response", "")
-    except urllib.error.URLError as exc:
-        raise ValueError(f"Ollama server not available at {ollama_url}: {exc}") from exc
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            raise ValueError(f"Model '{model}' is not available. Install it with: ollama pull {model}") from exc
-        raise ValueError(f"Ollama returned an error: {exc.code}") from exc
+            raise ValueError(
+                f"Model '{model}' is not available. Install it with: ollama pull {model}"
+            ) from exc
+        raise ValueError(f"Ollama returned an HTTP error: {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise ValueError(f"Ollama server not available at {ollama_url}: {exc}") from exc
     except (TimeoutError, json.JSONDecodeError) as exc:
         raise ValueError(f"Ollama communication error: {exc}") from exc
 

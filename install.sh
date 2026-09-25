@@ -12,7 +12,7 @@ BIN_DIR="${SKYLA_BIN_DIR:-$HOME/.local/bin}"
 CONFIG_DIR="${SKYLA_CONFIG_DIR:-$HOME/.config/skyla}"
 STATE_DIR="${SKYLA_STATE_DIR:-$HOME/.local/state/skyla}"
 VENV_DIR="$INSTALL_DIR/venv"
-MODEL="${SKYLA_MODEL:-llama3.2}"
+MODEL="${SKYLA_MODEL:-qwen3:1.7b}"
 
 command -v python3 >/dev/null || { echo "Missing dependency: install Python 3.10+ using your package manager." >&2; exit 1; }
 python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' || { echo "SKYLA requires Python 3.10 or newer." >&2; exit 1; }
@@ -27,7 +27,29 @@ if [[ ! -f "$CONFIG_DIR/config.json" ]]; then
   sed "s#__MODEL__#$MODEL#g; s#__STATE_DIR__#$STATE_DIR#g" "$ROOT_DIR/config/default.json" > "$CONFIG_DIR/config.json"
   echo "Created configuration: $CONFIG_DIR/config.json"
 else
-  echo "Keeping existing configuration: $CONFIG_DIR/config.json"
+  # Migrate the previous default model to the TASK-002 default.
+  # Only replace the old built-in default; preserve other user settings.
+  if grep -q '"model"[[:space:]]*:[[:space:]]*"llama3\.2"' "$CONFIG_DIR/config.json"; then
+    sed -i 's/"model"[[:space:]]*:[[:space:]]*"llama3\.2"/"model": "qwen3:1.7b"/' "$CONFIG_DIR/config.json"
+    echo "Migrated existing configuration model: llama3.2 -> qwen3:1.7b"
+  else
+    echo "Keeping existing configuration: $CONFIG_DIR/config.json"
+  fi
+
+  # Ensure the Ollama endpoint exists for TASK-002.
+  if ! grep -q '"ollama_url"[[:space:]]*:' "$CONFIG_DIR/config.json"; then
+    python3 - "$CONFIG_DIR/config.json" <<'PYCONFIG'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+data["ollama_url"] = "http://localhost:11434"
+path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PYCONFIG
+    echo "Added Ollama endpoint to existing configuration."
+  fi
 fi
 
 cat > "$BIN_DIR/skyla" <<EOF
